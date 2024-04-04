@@ -1,6 +1,6 @@
 // In the migration file for creating userinfo table
 exports.up = function(knex) {
-    return knex.schema.createTable('userinfo', function(table) {
+    return knex.schema.createTable('user_details', function(table) {
       table.increments('id').primary();
       table.integer('user_id').unsigned();
       table.string('name').notNullable();
