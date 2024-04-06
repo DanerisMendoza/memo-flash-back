@@ -1,60 +1,115 @@
-const knex = require('knex');
-const knexConfig = require('../knexfile.js');
-const db = knex(knexConfig.development);
-const fs = require('fs');
-const path = require('path');
+require('dotenv').config();
+const mongoose = require('mongoose')
+const mongoDatabaseURL = process.env.MONGODB_URL;
+
+
+// mongoose.connect('mongodb://127.0.0.1:27017/crud')
+mongoose.connect(mongoDatabaseURL, {
+  useNewUrlParser: true,
+})
+
+const connection = mongoose.connection
+
+const UserSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  password: String
+})
+const UserModel = mongoose.model("users", UserSchema)
 
 exports.getUsers = async (req, res) => {
-  try {
-    const users = await db('users')
-      .select('users.*', 'user_details.*')
-      .join('user_details', 'users.id', 'user_details.user_id');
-
-    // Function to convert image to base64
-    function getImageBase64(profilePicPath) {
-      if (profilePicPath !== null) {
-        const imageType = path.extname(profilePicPath).substring(1); // Get the file extension
-        const allowedFormats = ['png', 'jpg', 'jpeg']; // Allowed image formats
-
-        if (allowedFormats.includes(imageType)) {
-          try {
-            const imageData = fs.readFileSync(profilePicPath); // Read image file
-            const base64Image = Buffer.from(imageData).toString('base64'); // Convert image to base64
-            return `data:image/${imageType};base64,${base64Image}`; // Format base64 image
-          } catch (error) {
-            console.error(`Error reading image ${profilePicPath}:`, error);
-          }
-        }
-      }
-      return null; // Return null if profile pic is null or unsupported format
-    }
-
-    // Map users array and add base64 image to each user object
-    const usersWithImages = users.map(user => {
-      const profilePicPath = user.profile_pic_path;
-      const base64Image = getImageBase64(profilePicPath);
-      return { ...user, base64img: base64Image };
-    });
-
-    res.json(usersWithImages);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal Server Error', error: error });
-  }
+  UserModel.find({}).then((result) => {
+    res.json(result)
+  }).catch((err) => {
+    console.log(err)
+  })
 };
 
 exports.createUser = (req, res) => {
-  // Logic to create a new user in the database
+  const { name, email, password } = req.body;
+  UserModel.findOne({ email: email })
+    .then(existingUser => {
+      if (existingUser) {
+        return res.status(400).json({ message: 'Email already exists' });
+      } else {
+        const newUser = new UserModel({
+          name,
+          password,
+          email,
+        });
+        newUser.save()
+          .then(savedUser => {
+            res.status(201).json(savedUser);
+          })
+          .catch(error => {
+            console.error(error);
+            res.status(500).json({ message: 'Server Error' });
+          });
+      }
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(500).json({ message: 'Server Error' });
+    });
 };
 
+
 exports.getUserById = (req, res) => {
-  // Logic to fetch a user by ID from the database
+  const userId = req.params.id;
+  UserModel.findById(userId)
+    .then(user => {
+      if (!user) {
+        return res.status(404).json({ messpassword: 'User not found' });
+      }
+      res.json(user);
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(500).json({ messpassword: 'Server Error' });
+    });
 };
 
 exports.updateUser = (req, res) => {
-  // Logic to update a user in the database
+  const userId = req.params.id;
+  const { name, password, email } = req.body;
+  UserModel.findByIdAndUpdate(userId, { name, password, email }, { new: true })
+    .then(updatedUser => {
+      if (!updatedUser) {
+        return res.status(404).json({ messpassword: 'User not found' });
+      }
+      res.json(updatedUser);
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(500).json({ messpassword: 'Server Error' });
+    });
 };
 
 exports.deleteUser = (req, res) => {
-  // Logic to delete a user from the database
+  const userId = req.params.id;
+  UserModel.findByIdAndDelete(userId)
+    .then(deletedUser => {
+      if (!deletedUser) {
+        return res.status(404).json({ messpassword: 'User not found' });
+      }
+      res.json({ messpassword: 'User deleted successfully' });
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(500).json({ messpassword: 'Server Error' });
+    });
+};
+
+exports.deleteAll = (req, res) => {
+  UserModel.deleteMany({})
+    .then(deletedUsers => {
+      if (deletedUsers.deletedCount === 0) {
+        return res.status(404).json({ messpassword: 'No users found' });
+      }
+      res.json({ messpassword: 'All users deleted successfully' });
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(500).json({ messpassword: 'Server Error' });
+    });
 };

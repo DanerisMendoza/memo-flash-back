@@ -1,6 +1,11 @@
 const express = require('express');
+const bodyParser = require('body-parser');
 const app = express();
 app.use(express.json());
+app.use(bodyParser.json());
+const multer = require('multer');
+
+const upload = multer();
 
 // Web (view)
 app.get('/', (req, res) => {
@@ -12,10 +17,11 @@ const router = express.Router();
 const userController = require('./controllers/UserController');
 // user
 router.get('/users', userController.getUsers);
-router.post('/users', userController.createUser);
+router.post('/users',upload.none(), userController.createUser);
 router.get('/users/:id', userController.getUserById);
 router.put('/users/:id', userController.updateUser);
 router.delete('/users/:id', userController.deleteUser);
+router.delete('/deleteAllUsers', userController.deleteAll);
 
 app.use('/api', router); // Mount the router under the /api prefix
 
