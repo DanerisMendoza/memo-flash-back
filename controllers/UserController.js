@@ -11,6 +11,7 @@ mongoose.connect(mongoDatabaseURL, {
 const connection = mongoose.connection
 
 const UserSchema = new mongoose.Schema({
+  username: String,
   name: String,
   email: String,
   password: String
@@ -26,16 +27,18 @@ exports.getUsers = async (req, res) => {
 };
 
 exports.createUser = (req, res) => {
-  const { name, email, password } = req.body;
-  UserModel.findOne({ email: email })
-    .then(existingUser => {
-      if (existingUser) {
-        return res.status(400).json({ message: 'Email already exists' });
+  const { username, name, password } = req.body; 
+  console.log(req.body);
+  UserModel.findOne({ username: username })
+    .then(existingUsernameUser => {
+      if (existingUsernameUser) {
+        return res.status(400).json({ message: 'Username already exists!' });
       } else {
+        // Create a new user
         const newUser = new UserModel({
+          username,
           name,
           password,
-          email,
         });
         newUser.save()
           .then(savedUser => {
@@ -52,6 +55,7 @@ exports.createUser = (req, res) => {
       res.status(500).json({ message: 'Server Error' });
     });
 };
+
 
 
 exports.getUserById = (req, res) => {

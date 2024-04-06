@@ -1,10 +1,14 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 const app = express();
 app.use(express.json());
 app.use(bodyParser.json());
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true // if you are sending cookies or other credentials
+}));
 const multer = require('multer');
-
 const upload = multer();
 
 // Web (view)
@@ -17,7 +21,7 @@ const router = express.Router();
 const userController = require('./controllers/UserController');
 // user
 router.get('/users', userController.getUsers);
-router.post('/users',upload.none(), userController.createUser);
+router.post('/users', upload.none(), userController.createUser);
 router.get('/users/:id', userController.getUserById);
 router.put('/users/:id', userController.updateUser);
 router.delete('/users/:id', userController.deleteUser);
