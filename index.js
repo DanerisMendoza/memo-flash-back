@@ -2,6 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const app = express();
+const jwt = require('jsonwebtoken');
+
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(cors({
@@ -16,11 +18,34 @@ app.get('/', (req, res) => {
     res.send('Hello, World!');
 });
 
+// middleware
+const verifyToken = (role) => {
+    return (req, res, next) => {
+        const token = req.headers.authorization;
+        if (!token) {
+            return res.status(403).json({ message: 'Token is not provided' });
+        }
+        jwt.verify(token, 'your_secret_key', (err, decoded) => {
+            if (err) {
+                return res.status(401).json({ message: 'Unauthorized' });
+            }
+            const hasPermission = decoded.role.includes(role)
+            if (!hasPermission) {
+                return res.status(403).json({ message: 'Insufficient permissions' });
+            }            
+            req.user = decoded;
+            next();
+        });
+    };
+};
+
+
 // API 
 const router = express.Router();
 const userController = require('./controllers/UserController');
 // user
-router.get('/users', userController.getUsers);
+router.post('/login', upload.none(), userController.login);
+router.get('/users',verifyToken(0), userController.getUsers);
 router.post('/users', upload.none(), userController.createUser);
 router.get('/users/:id', userController.getUserById);
 router.put('/users/:id', userController.updateUser);

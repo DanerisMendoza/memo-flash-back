@@ -1,7 +1,8 @@
 require('dotenv').config();
 const mongoose = require('mongoose')
 const mongoDatabaseURL = process.env.MONGODB_URL;
-
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 // mongoose.connect('mongodb://127.0.0.1:27017/crud')
 mongoose.connect(mongoDatabaseURL, {
@@ -14,9 +15,32 @@ const UserSchema = new mongoose.Schema({
   username: String,
   name: String,
   email: String,
-  password: String
+  password: String,
+  role: [Number], //0=> admin, 1=>enduser
 })
 const UserModel = mongoose.model("users", UserSchema)
+
+exports.login = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await UserModel.findOne({ username });
+    if (!user) {
+      res.status(400).json({ message: 'User not found' });
+    }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      res.status(400).json({ message: 'Invalid password' });
+    }
+    if(isPasswordValid){
+      const token = jwt.sign({ id: user._id, username: user.username, role: user.role }, 'your_secret_key', { expiresIn: '1h' });
+      res.json({ token, status: 201 });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 
 exports.getUsers = async (req, res) => {
   UserModel.find({}).then((result) => {
@@ -27,33 +51,43 @@ exports.getUsers = async (req, res) => {
 };
 
 exports.createUser = (req, res) => {
-  const { username, name, password } = req.body; 
+  const { username, name, password,role } = req.body;
   console.log(req.body);
-  UserModel.findOne({ username: username })
-    .then(existingUsernameUser => {
-      if (existingUsernameUser) {
-        return res.status(400).json({ message: 'Username already exists!' });
-      } else {
-        // Create a new user
-        const newUser = new UserModel({
-          username,
-          name,
-          password,
-        });
-        newUser.save()
-          .then(savedUser => {
-            res.status(201).json(savedUser);
-          })
-          .catch(error => {
-            console.error(error);
-            res.status(500).json({ message: 'Server Error' });
+
+  // Hash the password
+  bcrypt.hash(password, 10, (err, hashedPassword) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: 'Server Error' });
+    }
+
+    UserModel.findOne({ username: username })
+      .then(existingUsernameUser => {
+        if (existingUsernameUser) {
+          return res.status(400).json({ message: 'Username already exists!' });
+        } else {
+          // Create a new user with hashed password
+          const newUser = new UserModel({
+            username,
+            name,
+            password: hashedPassword, // Store hashed password
+            role
           });
-      }
-    })
-    .catch(error => {
-      console.error(error);
-      res.status(500).json({ message: 'Server Error' });
-    });
+          newUser.save()
+            .then(savedUser => {
+              res.status(201).json(savedUser);
+            })
+            .catch(error => {
+              console.error(error);
+              res.status(500).json({ message: 'Server Error' });
+            });
+        }
+      })
+      .catch(error => {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+      });
+  });
 };
 
 
