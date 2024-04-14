@@ -32,7 +32,7 @@ exports.login = async (req, res) => {
       res.status(400).json({ message: 'Invalid password' });
     }
     if(isPasswordValid){
-      const token = jwt.sign({ id: user._id, username: user.username, role: user.role }, 'your_secret_key', { expiresIn: '1h' });
+      const token = jwt.sign({ id: user._id, name: user.name, username: user.username, role: user.role }, 'your_secret_key', { expiresIn: '1h' });
       res.json({ token, status: 201 });
     }
   } catch (error) {
@@ -52,8 +52,6 @@ exports.getUsers = async (req, res) => {
 
 exports.createUser = (req, res) => {
   const { username, name, password,role } = req.body;
-  console.log(req.body);
-
   // Hash the password
   bcrypt.hash(password, 10, (err, hashedPassword) => {
     if (err) {
@@ -68,10 +66,10 @@ exports.createUser = (req, res) => {
         } else {
           // Create a new user with hashed password
           const newUser = new UserModel({
-            username,
             name,
+            username,
             password: hashedPassword, // Store hashed password
-            role
+            role,
           });
           newUser.save()
             .then(savedUser => {
