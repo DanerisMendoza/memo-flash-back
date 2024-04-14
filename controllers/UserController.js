@@ -93,18 +93,31 @@ exports.createUser = (req, res) => {
 
 
 exports.getUserById = (req, res) => {
-  const userId = req.params.id;
+  const userId = req.body.user_id;
   UserModel.findById(userId)
     .then(user => {
       if (!user) {
-        return res.status(404).json({ messpassword: 'User not found' });
+        return res.status(404).json({ message: 'User not found' });
       }
       res.json(user);
     })
     .catch(error => {
       console.error(error);
-      res.status(500).json({ messpassword: 'Server Error' });
+      res.status(500).json({ message: 'Server Error' });
     });
+};
+
+exports.getUserByToken = (req, res) => {
+  const token = req.headers.authorization;
+  if (!token) {
+      return res.status(403).json({ message: 'Token is not provided' });
+  }
+  jwt.verify(token, 'your_secret_key', (err, decoded) => {
+      if (err) {
+          return res.status(401).json({ message: 'Unauthorized' });
+      }
+      res.json(decoded);
+  });
 };
 
 exports.updateUser = (req, res) => {
@@ -113,13 +126,13 @@ exports.updateUser = (req, res) => {
   UserModel.findByIdAndUpdate(userId, { name, password, email }, { new: true })
     .then(updatedUser => {
       if (!updatedUser) {
-        return res.status(404).json({ messpassword: 'User not found' });
+        return res.status(404).json({ message: 'User not found' });
       }
       res.json(updatedUser);
     })
     .catch(error => {
       console.error(error);
-      res.status(500).json({ messpassword: 'Server Error' });
+      res.status(500).json({ message: 'Server Error' });
     });
 };
 
@@ -128,13 +141,13 @@ exports.deleteUser = (req, res) => {
   UserModel.findByIdAndDelete(userId)
     .then(deletedUser => {
       if (!deletedUser) {
-        return res.status(404).json({ messpassword: 'User not found' });
+        return res.status(404).json({ message: 'User not found' });
       }
-      res.json({ messpassword: 'User deleted successfully' });
+      res.json({ message: 'User deleted successfully' });
     })
     .catch(error => {
       console.error(error);
-      res.status(500).json({ messpassword: 'Server Error' });
+      res.status(500).json({ message: 'Server Error' });
     });
 };
 
@@ -142,12 +155,12 @@ exports.deleteAll = (req, res) => {
   UserModel.deleteMany({})
     .then(deletedUsers => {
       if (deletedUsers.deletedCount === 0) {
-        return res.status(404).json({ messpassword: 'No users found' });
+        return res.status(404).json({ message: 'No users found' });
       }
-      res.json({ messpassword: 'All users deleted successfully' });
+      res.json({ message: 'All users deleted successfully' });
     })
     .catch(error => {
       console.error(error);
-      res.status(500).json({ messpassword: 'Server Error' });
+      res.status(500).json({ message: 'Server Error' });
     });
 };

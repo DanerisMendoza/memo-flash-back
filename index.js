@@ -29,10 +29,12 @@ const verifyToken = (role) => {
             if (err) {
                 return res.status(401).json({ message: 'Unauthorized' });
             }
-            const hasPermission = decoded.role.includes(role)
-            if (!hasPermission) {
-                return res.status(403).json({ message: 'Insufficient permissions' });
-            }            
+            if(role!==null){
+                const hasPermission = decoded.role.includes(role)
+                if (!hasPermission) {
+                    return res.status(403).json({ message: 'Insufficient permissions' });
+                }            
+            }
             req.user = decoded;
             next();
         });
@@ -47,7 +49,8 @@ const userController = require('./controllers/UserController');
 router.post('/login', upload.none(), userController.login);
 router.get('/users',verifyToken(0), userController.getUsers);
 router.post('/users', upload.none(), userController.createUser);
-router.get('/users/:id', userController.getUserById);
+router.get('/getUserById',upload.none(), userController.getUserById);
+router.get('/getUserByToken', userController.getUserByToken);
 router.put('/users/:id', userController.updateUser);
 router.delete('/users/:id', userController.deleteUser);
 router.delete('/deleteAllUsers', userController.deleteAll);
