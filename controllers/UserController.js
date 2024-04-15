@@ -5,9 +5,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 // mongoose.connect('mongodb://127.0.0.1:27017/crud')
-mongoose.connect(mongoDatabaseURL, {
-  useNewUrlParser: true,
-})
+mongoose.connect(mongoDatabaseURL)
 
 const connection = mongoose.connection
 
@@ -17,6 +15,7 @@ const UserSchema = new mongoose.Schema({
   email: String,
   password: String,
   role: [Number], //0=> admin, 1=>enduser
+  profile_pic_path: String,
 })
 const UserModel = mongoose.model("users", UserSchema)
 
@@ -31,8 +30,8 @@ exports.login = async (req, res) => {
     if (!isPasswordValid) {
       res.status(400).json({ message: 'Invalid password' });
     }
-    if(isPasswordValid){
-      const token = jwt.sign({ id: user._id, name: user.name, username: user.username, role: user.role }, 'your_secret_key', { expiresIn: '1h' });
+    if (isPasswordValid) {
+      const token = jwt.sign({ id: user._id, name: user.name, username: user.username, role: user.role, profile_pic_path: user.profile_pic_path }, 'your_secret_key');
       res.json({ token, status: 201 });
     }
   } catch (error) {
@@ -51,7 +50,7 @@ exports.getUsers = async (req, res) => {
 };
 
 exports.createUser = (req, res) => {
-  const { username, name, password,role } = req.body;
+  const { username, name, password, role } = req.body;
   // Hash the password
   bcrypt.hash(password, 10, (err, hashedPassword) => {
     if (err) {
@@ -70,6 +69,7 @@ exports.createUser = (req, res) => {
             username,
             password: hashedPassword, // Store hashed password
             role,
+            profile_pic_path: '',
           });
           newUser.save()
             .then(savedUser => {
@@ -108,13 +108,13 @@ exports.getUserById = (req, res) => {
 exports.getUserByToken = (req, res) => {
   const token = req.headers.authorization;
   if (!token) {
-      return res.status(403).json({ message: 'Token is not provided' });
+    return res.status(403).json({ message: 'Token is not provided' });
   }
   jwt.verify(token, 'your_secret_key', (err, decoded) => {
-      if (err) {
-          return res.status(401).json({ message: 'Unauthorized' });
-      }
-      res.json(decoded);
+    if (err) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    res.json(decoded);
   });
 };
 
