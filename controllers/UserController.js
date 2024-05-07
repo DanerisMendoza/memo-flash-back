@@ -22,23 +22,33 @@ const UserModel = mongoose.model("users", UserSchema)
 exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
+    console.log(password)
     const user = await UserModel.findOne({ username });
     if (!user) {
       res.status(400).json({ message: 'User not found' });
     }
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      res.status(400).json({ message: 'Invalid password' });
-    }
-    if (isPasswordValid) {
-      const token = jwt.sign({ id: user._id, name: user.name, username: user.username, role: user.role, profile_pic_path: user.profile_pic_path }, 'your_secret_key');
-      res.json({ token, status: 201 });
-    }
+    // const isPasswordValid = await bcrypt.compare(password, user.password);
+    bcrypt.compare(password, user.password)
+      .then((isPasswordValid) => {
+        if (isPasswordValid) {
+          const token = jwt.sign({ id: user._id, name: user.name, email: user.email, username: user.username, role: user.role, profile_pic_path: user.profile_pic_path }, 'your_secret_key');
+          res.json({ token, status: 201 });
+        }
+        else {
+          res.status(400).json({ message: 'Invalid password' });
+        }
+      })
+      .catch((error) => {
+        console.log(error)
+      });
+
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 
 
 exports.getUsers = async (req, res) => {
@@ -50,7 +60,8 @@ exports.getUsers = async (req, res) => {
 };
 
 exports.createUser = (req, res) => {
-  const { username, name, password, role } = req.body;
+  const { username, name, password, role, email } = req.body;
+  console.log(req.body)
   // Hash the password
   bcrypt.hash(password, 10, (err, hashedPassword) => {
     if (err) {
@@ -58,16 +69,22 @@ exports.createUser = (req, res) => {
       return res.status(500).json({ message: 'Server Error' });
     }
 
-    UserModel.findOne({ username: username })
-      .then(existingUsernameUser => {
-        if (existingUsernameUser) {
-          return res.status(400).json({ message: 'Username already exists!' });
+    UserModel.findOne({ $or: [{ username: username }, { email: email }] })
+      .then(existingUser => {
+        if (existingUser) {
+          console.log(existingUser)
+          if (existingUser.username === username) {
+            return res.status(400).json({ message: 'Username already exists!' });
+          } else if (existingUser.email === email) {
+            return res.status(400).json({ message: 'Email already exists!' });
+          }
         } else {
           // Create a new user with hashed password
           const newUser = new UserModel({
             name,
             username,
-            password: hashedPassword, // Store hashed password
+            email,
+            password: hashedPassword,
             role,
             profile_pic_path: '',
           });
@@ -85,6 +102,7 @@ exports.createUser = (req, res) => {
         console.error(error);
         res.status(500).json({ message: 'Server Error' });
       });
+
   });
 };
 
@@ -118,20 +136,33 @@ exports.getUserByToken = (req, res) => {
   });
 };
 
-exports.updateUser = (req, res) => {
+exports.updateUser = (req, res, next) => {
+  console.log(req.body)
   const userId = req.params.id;
-  const { name, password, email } = req.body;
-  UserModel.findByIdAndUpdate(userId, { name, password, email }, { new: true })
-    .then(updatedUser => {
-      if (!updatedUser) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      res.json(updatedUser);
-    })
-    .catch(error => {
-      console.error(error);
-      res.status(500).json({ message: 'Server Error' });
-    });
+  const { name, password, email, picture } = req.body;
+  if (!name) {
+    return res.status(400).json({ message: 'Name is required' });
+  }
+  if (!password) {
+    return res.status(400).json({ message: 'Password is required' });
+  }
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+  bcrypt.hash(password, 10, (err, hashedPassword) => {
+    const password = hashedPassword
+    UserModel.findByIdAndUpdate(userId, { name, password, email }, { new: true })
+      .then(updatedUser => {
+        if (!updatedUser) {
+          return res.status(404).json({ message: 'User not found' });
+        }
+        res.json(updatedUser);
+      })
+      .catch(error => {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+      });
+  })
 };
 
 exports.deleteUser = (req, res) => {
