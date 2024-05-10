@@ -22,38 +22,39 @@ const UserModel = mongoose.model("users", UserSchema)
 exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
-    console.log(password)
+    console.log(password);
+    
     const user = await UserModel.findOne({ username });
     if (!user) {
-      res.status(400).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User not found' }); // Add return statement
     }
-    // const isPasswordValid = await bcrypt.compare(password, user.password);
+    
     bcrypt.compare(password, user.password)
       .then((isPasswordValid) => {
         if (isPasswordValid) {
           const token = jwt.sign({ id: user._id, name: user.name, email: user.email, username: user.username, role: user.role, profile_pic_path: user.profile_pic_path }, 'your_secret_key');
-          res.json({ token, status: 201 });
+          return res.json({ token, status: 200 }); // Add return statement
         }
         else {
-          res.status(400).json({ message: 'Invalid password' });
+          return res.status(401).json({ message: 'Invalid password' }); // Add return statement
         }
       })
       .catch((error) => {
-        console.log(error)
+        console.log(error);
+        return res.status(500).json({ message: 'Internal server error' }); // Add return statement
       });
-
-
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' }); // Add return statement
   }
 };
 
 
 
+
 exports.getUsers = async (req, res) => {
   UserModel.find({}).then((result) => {
-    res.json(result)
+    return res.json(result)
   }).catch((err) => {
     console.log(err)
   })
@@ -90,17 +91,17 @@ exports.createUser = (req, res) => {
           });
           newUser.save()
             .then(savedUser => {
-              res.status(201).json(savedUser);
+              return res.status(201).json(savedUser);
             })
             .catch(error => {
               console.error(error);
-              res.status(500).json({ message: 'Server Error' });
+              return res.status(500).json({ message: 'Server Error' });
             });
         }
       })
       .catch(error => {
         console.error(error);
-        res.status(500).json({ message: 'Server Error' });
+        return res.status(500).json({ message: 'Server Error' });
       });
 
   });
@@ -115,11 +116,11 @@ exports.getUserById = (req, res) => {
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
-      res.json(user);
+      return res.json(user);
     })
     .catch(error => {
       console.error(error);
-      res.status(500).json({ message: 'Server Error' });
+      return res.status(500).json({ message: 'Server Error' });
     });
 };
 
@@ -132,7 +133,7 @@ exports.getUserByToken = (req, res) => {
     if (err) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
-    res.json(decoded);
+    return res.json(decoded);
   });
 };
 
@@ -156,11 +157,11 @@ exports.updateUser = (req, res, next) => {
         if (!updatedUser) {
           return res.status(404).json({ message: 'User not found' });
         }
-        res.json(updatedUser);
+        return res.json(updatedUser);
       })
       .catch(error => {
         console.error(error);
-        res.status(500).json({ message: 'Server Error' });
+        return res.status(500).json({ message: 'Server Error' });
       });
   })
 };
@@ -172,11 +173,11 @@ exports.deleteUser = (req, res) => {
       if (!deletedUser) {
         return res.status(404).json({ message: 'User not found' });
       }
-      res.json({ message: 'User deleted successfully' });
+      return res.json({ message: 'User deleted successfully' });
     })
     .catch(error => {
       console.error(error);
-      res.status(500).json({ message: 'Server Error' });
+      return res.status(500).json({ message: 'Server Error' });
     });
 };
 
@@ -186,10 +187,10 @@ exports.deleteAll = (req, res) => {
       if (deletedUsers.deletedCount === 0) {
         return res.status(404).json({ message: 'No users found' });
       }
-      res.json({ message: 'All users deleted successfully' });
+      return res.json({ message: 'All users deleted successfully' });
     })
     .catch(error => {
       console.error(error);
-      res.status(500).json({ message: 'Server Error' });
+      return res.status(500).json({ message: 'Server Error' });
     });
 };
