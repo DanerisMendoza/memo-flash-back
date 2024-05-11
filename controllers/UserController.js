@@ -23,12 +23,12 @@ exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
     console.log(password);
-    
+
     const user = await UserModel.findOne({ username });
     if (!user) {
       return res.status(404).json({ message: 'User not found' }); // Add return statement
     }
-    
+
     bcrypt.compare(password, user.password)
       .then((isPasswordValid) => {
         if (isPasswordValid) {
@@ -137,34 +137,58 @@ exports.getUserByToken = (req, res) => {
   });
 };
 
-exports.updateUser = (req, res, next) => {
-  console.log(req.body)
+exports.updateUser = async (req, res, next) => {
+
   const userId = req.params.id;
-  const { name, password, email, picture } = req.body;
+  const { name, username, email, picture } = req.body;
   if (!name) {
     return res.status(400).json({ message: 'Name is required' });
-  }
-  if (!password) {
-    return res.status(400).json({ message: 'Password is required' });
   }
   if (!email) {
     return res.status(400).json({ message: 'Email is required' });
   }
-  bcrypt.hash(password, 10, (err, hashedPassword) => {
-    const password = hashedPassword
-    UserModel.findByIdAndUpdate(userId, { name, password, email }, { new: true })
-      .then(updatedUser => {
-        if (!updatedUser) {
-          return res.status(404).json({ message: 'User not found' });
-        }
-        return res.json(updatedUser);
-      })
-      .catch(error => {
-        console.error(error);
-        return res.status(500).json({ message: 'Server Error' });
-      });
-  })
+  if (!username) {
+    return res.status(400).json({ message: 'username is required' });
+  }
+
+  try {
+    // Check if name is already in use
+    const existingNameUser = await UserModel.findOne({ name });
+    if (existingNameUser && existingNameUser._id.toString() !== userId) {
+      return res.status(409).json({ message: 'Name is already in use' });
+    }
+
+    // Check if email is already in use
+    const existingEmailUser = await UserModel.findOne({ email });
+    if (existingEmailUser && existingEmailUser._id.toString() !== userId) {
+      return res.status(409).json({ message: 'Email is already in use' });
+
+    }
+
+    // Check if username is already in use
+    const existingUsernameUser = await UserModel.findOne({ username });
+    if (existingUsernameUser && existingUsernameUser._id.toString() !== userId) {
+      return res.status(409).json({ message: 'Username is already in use' });
+    }
+
+
+  } catch (error) {
+    return res.status(500).json({ message: 'Server Error' });
+  }
+
+  try {
+    const updatedUser = await UserModel.findByIdAndUpdate(userId, { name, username, email }, { new: true });
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    const user = await UserModel.findOne({ username });
+    const token = jwt.sign({ id: user._id, name: user.name, email: user.email, username: user.username, role: user.role, profile_pic_path: user.profile_pic_path }, 'your_secret_key');
+    return res.json({ token, status: 200 });
+  } catch (error) {
+    return res.status(500).json({ message: 'Server Error' });
+  }
 };
+
 
 exports.deleteUser = (req, res) => {
   const userId = req.params.id;
