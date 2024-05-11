@@ -3,7 +3,6 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const app = express();
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 const { validationResult, body } = require('express-validator');
 const path = require('path');
 
@@ -33,15 +32,12 @@ const storage = multer.diskStorage({
         cb(null, 'uploads/'); // Set your desired upload directory
     },
     filename: function (req, file, cb) {
-        const today = new Date().toISOString().slice(0, 10);
-        const hash = crypto.createHash('sha256').update(today).digest('hex');
-        const newFilename = `${hash}_${file.originalname}`;
-        cb(null, newFilename);
+        cb(null, file.originalname);
     }
 });
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 1000000 },
+    limits: { fileSize: 10000000 },
     fileFilter: function (req, file, cb) {
         checkFileType(file, cb);
     }
@@ -85,7 +81,11 @@ router.get('/users', verifyToken(0), userController.getUsers);
 router.post('/users', upload.none(), userController.createUser);
 router.get('/getUserById', upload.none(), userController.getUserById);
 router.get('/getUserByToken', userController.getUserByToken);
-router.put('/users/:id', upload.single('picture'), userController.updateUser);
+router.put('/users/:id', upload.none(), userController.updateUser);
+router.post('/uploadAvatar', upload.single('avatar'), (req, res) => {
+    res.status(200).json({ message: 'File uploaded successfully' });
+});
+
 router.delete('/users/:id', userController.deleteUser);
 router.delete('/deleteAllUsers', userController.deleteAll);
 

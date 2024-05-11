@@ -3,6 +3,7 @@ const mongoose = require('mongoose')
 const mongoDatabaseURL = process.env.MONGODB_URL;
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 // mongoose.connect('mongodb://127.0.0.1:27017/crud')
 mongoose.connect(mongoDatabaseURL)
@@ -137,10 +138,14 @@ exports.getUserByToken = (req, res) => {
   });
 };
 
-exports.updateUser = async (req, res, next) => {
+exports.uploadAvatar = async (req, res, next) => {
+  console.log(req)
+}
 
+exports.updateUser = async (req, res, next) => {
+  // console.log(req.body)
   const userId = req.params.id;
-  const { name, username, email, picture } = req.body;
+  const { name, username, email, avatar_name } = req.body;
   if (!name) {
     return res.status(400).json({ message: 'Name is required' });
   }
@@ -176,14 +181,22 @@ exports.updateUser = async (req, res, next) => {
     return res.status(500).json({ message: 'Server Error' });
   }
 
+  const updateData = { name, username, email };
+  if (avatar_name != '') {
+    const today = new Date().toISOString().slice(0, 10);
+    const hash = crypto.createHash('sha256').update(today).digest('hex');
+    const newFilename = `${hash}_${avatar_name}`;
+    updateData.profile_pic_path = newFilename;
+  }
+
   try {
-    const updatedUser = await UserModel.findByIdAndUpdate(userId, { name, username, email }, { new: true });
+    const updatedUser = await UserModel.findByIdAndUpdate(userId, updateData, { new: true });
     if (!updatedUser) {
       return res.status(404).json({ message: 'User not found' });
     }
     const user = await UserModel.findOne({ username });
     const token = jwt.sign({ id: user._id, name: user.name, email: user.email, username: user.username, role: user.role, profile_pic_path: user.profile_pic_path }, 'your_secret_key');
-    return res.json({ token, status: 200 });
+    return res.json({ token, status: 200,  profile_pic_path: user.profile_pic_path });
   } catch (error) {
     return res.status(500).json({ message: 'Server Error' });
   }
