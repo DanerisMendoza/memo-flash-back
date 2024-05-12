@@ -7,10 +7,7 @@ const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 
-// mongoose.connect('mongodb://127.0.0.1:27017/crud')
 mongoose.connect(mongoDatabaseURL)
-
-const connection = mongoose.connection
 
 const UserSchema = new mongoose.Schema({
   username: String,
@@ -65,8 +62,6 @@ exports.getUsers = async (req, res) => {
 
 exports.createUser = (req, res) => {
   const { username, name, password, role, email } = req.body;
-  console.log(req.body)
-  // Hash the password
   bcrypt.hash(password, 10, (err, hashedPassword) => {
     if (err) {
       console.error(err);
@@ -83,7 +78,6 @@ exports.createUser = (req, res) => {
             return res.status(400).json({ message: 'Email already exists!' });
           }
         } else {
-          // Create a new user with hashed password
           const newUser = new UserModel({
             name,
             username,
@@ -136,27 +130,24 @@ exports.getUserByToken = (req, res) => {
     if (err) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
-    const avatar_path = 'uploads/' + decoded.profile_pic_path
-    // Check if profile picture exists
-    if (fs.existsSync(avatar_path)) {
-      // Read the image file
-      fs.readFile(avatar_path, (err, data) => {
-        if (err) {
-          return res.status(500).json({ message: 'Error reading image file' });
-        }
-        // Determine image format
-        const image_format = decoded.profile_pic_path.split('.').pop().toLowerCase();
-        // Encode image data as base64
-        const base64str = Buffer.from(data).toString('base64');
-        // Construct base64 image data URI
-        const base64img = `data:image/${image_format};base64,${base64str}`;
-        // Add base64img to decoded user details
-        decoded.profile_pic = base64img;
-        // Return decoded user details with base64img
+    if (decoded.profile_pic_path != "") {
+      const avatar_path = 'uploads/' + decoded.profile_pic_path
+      if (fs.existsSync(avatar_path)) {
+        fs.readFile(avatar_path, (err, data) => {
+          if (err) {
+            return res.status(500).json({ message: 'Error reading image file' });
+          }
+          const image_format = decoded.profile_pic_path.split('.').pop().toLowerCase();
+          const base64str = Buffer.from(data).toString('base64');
+          const base64img = `data:image/${image_format};base64,${base64str}`;
+          decoded.profile_pic = base64img;
+          return res.json(decoded);
+        });
+      } else {
         return res.json(decoded);
-      });
-    } else {
-      // If profile picture does not exist, return decoded user details without base64img
+      }
+    }
+    else {
       return res.json(decoded);
     }
   });
