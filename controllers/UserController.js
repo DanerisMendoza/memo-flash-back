@@ -4,6 +4,8 @@ const mongoDatabaseURL = process.env.MONGODB_URL;
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const path = require('path');
+const fs = require('fs');
 
 // mongoose.connect('mongodb://127.0.0.1:27017/crud')
 mongoose.connect(mongoDatabaseURL)
@@ -134,7 +136,29 @@ exports.getUserByToken = (req, res) => {
     if (err) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
-    return res.json(decoded);
+    const avatar_path = 'uploads/'+decoded.profile_pic_path
+    // Check if profile picture exists
+    if (fs.existsSync(avatar_path)) {
+      // Read the image file
+      fs.readFile(avatar_path, (err, data) => {
+        if (err) {
+          return res.status(500).json({ message: 'Error reading image file' });
+        }
+        // Determine image format
+        const image_format = decoded.profile_pic_path.split('.').pop().toLowerCase();
+        // Encode image data as base64
+        const base64str = Buffer.from(data).toString('base64');
+        // Construct base64 image data URI
+        const base64img = `data:image/${image_format};base64,${base64str}`;
+        // Add base64img to decoded user details
+        decoded.profile_pic = base64img;
+        // Return decoded user details with base64img
+        return res.json(decoded);
+      });
+    } else {
+      // If profile picture does not exist, return decoded user details without base64img
+      return res.json(decoded);
+    }
   });
 };
 
@@ -185,7 +209,7 @@ exports.updateUser = async (req, res, next) => {
   if (avatar_name != '') {
     const today = new Date().toISOString().slice(0, 10);
     const hash = crypto.createHash('sha256').update(today).digest('hex');
-    const newFilename = `${hash}_${avatar_name}`;
+    const newFilename = `${hash}.png`;
     updateData.profile_pic_path = newFilename;
   }
 
@@ -196,7 +220,7 @@ exports.updateUser = async (req, res, next) => {
     }
     const user = await UserModel.findOne({ username });
     const token = jwt.sign({ id: user._id, name: user.name, email: user.email, username: user.username, role: user.role, profile_pic_path: user.profile_pic_path }, 'your_secret_key');
-    return res.json({ token, status: 200,  profile_pic_path: user.profile_pic_path });
+    return res.json({ token, status: 200, profile_pic_path: user.profile_pic_path });
   } catch (error) {
     return res.status(500).json({ message: 'Server Error' });
   }
