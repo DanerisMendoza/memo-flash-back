@@ -136,7 +136,7 @@ exports.getUserByToken = (req, res) => {
     if (err) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
-    const avatar_path = 'uploads/'+decoded.profile_pic_path
+    const avatar_path = 'uploads/' + decoded.profile_pic_path
     // Check if profile picture exists
     if (fs.existsSync(avatar_path)) {
       // Read the image file
@@ -161,10 +161,6 @@ exports.getUserByToken = (req, res) => {
     }
   });
 };
-
-exports.uploadAvatar = async (req, res, next) => {
-  console.log(req)
-}
 
 exports.updateUser = async (req, res, next) => {
   // console.log(req.body)
@@ -207,8 +203,10 @@ exports.updateUser = async (req, res, next) => {
 
   const updateData = { name, username, email };
   if (avatar_name != '') {
-    const today = new Date().toISOString().slice(0, 10);
-    const hash = crypto.createHash('sha256').update(today).digest('hex');
+    const randomNineDigits = Math.floor(100000000 + Math.random() * 900000000);
+    const currentTimeInMillis = Date.now();
+    const concatenatedValue = `${randomNineDigits}${currentTimeInMillis}`;
+    const hash = crypto.createHash('sha256').update(concatenatedValue).digest('hex');
     const newFilename = `${hash}.png`;
     updateData.profile_pic_path = newFilename;
   }
