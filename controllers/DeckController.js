@@ -34,7 +34,7 @@ exports.createDeck = async (req, res) => {
         const { user_id, name, description, tags, parentDeck } = req.body;
         const newDeck = new DeckModel({ user_id, name, description, tags, parentDeck });
         const savedDeck = await newDeck.save();
-        res.status(201).json(savedDeck);
+        res.status(200).json({ message: 'Deck created successfully!'});
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -58,6 +58,20 @@ exports.getDeckById = async (req, res) => {
             return res.status(404).json({ error: "Deck not found" });
         }
         res.status(200).json(deck);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.getDeckByUserId = async (req, res) => {
+    try {
+        console.log(req.params)
+        const decks = await DeckModel.find({ user_id: req.params.id });
+
+        if (!decks || decks.length === 0) {
+            return res.status(404).json({ error: "No decks found for this user" });
+        }
+        res.status(200).json(decks);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -89,6 +103,18 @@ exports.deleteDeckById = async (req, res) => {
             return res.status(404).json({ error: "Deck not found" });
         }
         res.status(200).json({ message: "Deck deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.deleteAllDecks = async (req, res) => {
+    try {
+        const result = await DeckModel.deleteMany({});
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ message: "No decks found to delete" });
+        }
+        res.status(200).json({ message: "All decks deleted successfully" });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

@@ -88,6 +88,11 @@ router.put('/users/:id', upload.none(), userController.updateUser);
 router.post('/uploadAvatar', upload.single('avatar'), (req, res) => {
     res.status(200).json({ message: 'File uploaded successfully' });
 });
+// deck
+router.post('/createDeck', upload.none(), deckController.createDeck);
+router.get('/getAllDeck', deckController.getAllDecks);
+router.get('/getDeckByUserId/:id', deckController.getDeckByUserId);
+router.delete('/deleteAllDecks', deckController.deleteAllDecks);
 
 router.delete('/users/:id', userController.deleteUser);
 router.delete('/deleteAllUsers', userController.deleteAll);
