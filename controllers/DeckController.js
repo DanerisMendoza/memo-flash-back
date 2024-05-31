@@ -9,18 +9,11 @@ const fs = require('fs');
 
 mongoose.connect(mongoDatabaseURL)
 
-const CardSchema = new mongoose.Schema({
-    front: String,
-    back: String,
-    createdBy: String,
-    createdAt: { type: Date, default: Date.now },
-});
 
 const DeckSchema = new mongoose.Schema({
     user_id: String,
     name: String,
     description: String,
-    cards: [CardSchema],
     tags: [String],
     createdAt: { type: Date, default: Date.now },
     parentDeck: { type: mongoose.Schema.Types.ObjectId, ref: 'Deck' },
@@ -65,7 +58,6 @@ exports.getDeckById = async (req, res) => {
 
 exports.getDeckByUserId = async (req, res) => {
     try {
-        console.log(req.params)
         const decks = await DeckModel.find({ user_id: req.params.id });
 
         if (!decks || decks.length === 0) {

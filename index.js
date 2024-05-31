@@ -84,21 +84,29 @@ router.get('/users', verifyToken(0), userController.getUsers);
 router.post('/users', upload.none(), userController.createUser);
 router.get('/getUserById', upload.none(), userController.getUserById);
 router.get('/getUserByToken', userController.getUserByToken);
+router.delete('/users/:id', userController.deleteUser);
+router.delete('/deleteAllUsers', userController.deleteAll);
 router.put('/users/:id', upload.none(), userController.updateUser);
 router.post('/uploadAvatar', upload.single('avatar'), (req, res) => {
     res.status(200).json({ message: 'File uploaded successfully' });
 });
+
 // deck
 router.post('/createDeck', upload.none(), deckController.createDeck);
 router.get('/getAllDeck', deckController.getAllDecks);
 router.get('/getDeckByUserId/:id', deckController.getDeckByUserId);
+router.delete('/deleteDeckById/:id', deckController.deleteDeckById);
 router.delete('/deleteAllDecks', deckController.deleteAllDecks);
 
-router.delete('/users/:id', userController.deleteUser);
-router.delete('/deleteAllUsers', userController.deleteAll);
+// card
+router.post('/createCard', upload.none(), cardController.createCard);
+router.get('/getAllCards', cardController.getAllCards);
+router.get('/getCardsByDeckId/:id', cardController.getCardsByDeckId);
+router.delete('/deleteCardById/:id', cardController.deleteCardById);
+router.delete('/deleteAllCards/', cardController.deleteAllCards);
+
 
 app.use('/api', router); // Mount the router under the /api prefix
-
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

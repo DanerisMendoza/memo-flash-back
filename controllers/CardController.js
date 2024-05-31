@@ -10,6 +10,7 @@ const fs = require('fs');
 mongoose.connect(mongoDatabaseURL)
 
 const CardSchema = new mongoose.Schema({
+    deck_id: String,
     front: String,
     back: String,
     createdBy: String,
@@ -23,8 +24,8 @@ const CardModel = mongoose.model("card", CardSchema);
 // Create a new card
 exports.createCard = async (req, res) => {
     try {
-        const { front, back, createdBy } = req.body;
-        const newCard = new CardModel({ front, back, createdBy });
+        const { deck_id, front, back, createdBy } = req.body;
+        const newCard = new CardModel({ deck_id, front, back, createdBy });
         const savedCard = await newCard.save();
         res.status(201).json(savedCard);
     } catch (error) {
@@ -48,6 +49,19 @@ exports.getCardById = async (req, res) => {
         const card = await CardModel.findById(req.params.id);
         if (!card) {
             return res.status(404).json({ error: "Card not found" });
+        }
+        res.status(200).json(card);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.getCardsByDeckId = async (req, res) => {
+    try {
+        const card = await CardModel.find({ deck_id: req.params.id });
+
+        if (!card || card.length === 0) {
+            return res.status(404).json({ error: "No Card found for this deck" });
         }
         res.status(200).json(card);
     } catch (error) {
@@ -81,6 +95,18 @@ exports.deleteCardById = async (req, res) => {
             return res.status(404).json({ error: "Card not found" });
         }
         res.status(200).json({ message: "Card deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.deleteAllCards = async (req, res) => {
+    try {
+        const result = await CardModel.deleteMany({});
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ message: "No card found to delete" });
+        }
+        res.status(200).json({ message: "All cards deleted successfully" });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
