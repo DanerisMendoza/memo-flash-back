@@ -58,10 +58,10 @@ exports.getCardById = async (req, res) => {
 
 exports.getCardsByDeckId = async (req, res) => {
     try {
+        console.log(req.params)
         const card = await CardModel.find({ deck_id: req.params.id });
-
         if (!card || card.length === 0) {
-            return res.status(404).json({ error: "No Card found for this deck" });
+            return res.status(200).json({ error: "No Card found for this deck" });
         }
         res.status(200).json(card);
     } catch (error) {

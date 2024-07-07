@@ -61,7 +61,7 @@ exports.getDeckByUserId = async (req, res) => {
         const decks = await DeckModel.find({ user_id: req.params.id });
 
         if (!decks || decks.length === 0) {
-            return res.status(404).json({ error: "No decks found for this user" });
+            return res.status(200).json({ error: "No decks found for this user" });
         }
         res.status(200).json(decks);
     } catch (error) {
