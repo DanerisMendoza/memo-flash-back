@@ -46,7 +46,7 @@ const upload = multer({
 
 // Web (view)
 app.get('/', (req, res) => {
-    res.send('Hello, World!');
+    res.send('Hello, World and Docker!');
 });
 
 // middleware

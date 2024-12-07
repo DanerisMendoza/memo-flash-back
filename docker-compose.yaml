@@ -4,11 +4,22 @@ services:
   backend:
     build: ./
     container_name: backend
+    
+    # mirror port 3000 to new port 9000
     ports:
       - "9000:3000"
+    
+    # mirror this path to app folder (docker) except the node_modules
+    volumes:
+      - ./:/app
+      - /app/node_modules
+
   frontend:
     build: ../memo-flash-front
     container_name: frontend
     ports:
       - "8000:5173"
     stdin_open: true
+    volumes:
+      - ../memo-flash-front:/app
+      - /app/node_modules
