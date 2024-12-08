@@ -75,9 +75,9 @@ const verifyToken = (role) => {
 
 // API 
 const router = express.Router();
-const userController = require('./controllers/UserController');
-const deckController = require('./controllers/DeckController'); // Import deck controller
-const cardController = require('./controllers/CardController'); // Import card controller
+const userController = require('../controllers/UserController');
+const deckController = require('../controllers/DeckController'); // Import deck controller
+const cardController = require('../controllers/CardController'); // Import card controller
 
 // user
 router.post('/login', upload.none(), userController.login);
@@ -114,5 +114,3 @@ app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
     console.log(`http://localhost:${PORT}`);
 });
-
-module.exports = app;
