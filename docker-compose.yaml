@@ -12,11 +12,58 @@ services:
       - ./:/app
       - /app/node_modules
 
-  frontend:
+  # origin
+  # frontend:
+  #   build: ../memo-flash-front
+  #   container_name: frontend
+  #   ports:
+  #     - "8000:5173"
+  #   volumes:
+  #     - ../memo-flash-front:/app
+  #     - /app/node_modules
+
+  # frontend-dev:
+  #   build: ../memo-flash-front
+  #   container_name: frontend-dev
+  #   ports:
+  #     - "8000:5173"
+  #   volumes:
+  #     - ../memo-flash-front:/app
+  #     - /app/node_modules
+  #   environment:
+  #     - NODE_ENV=development
+
+  # frontend-prod:
+  #   build: ../memo-flash-front
+  #   container_name: frontend-prod
+  #   ports:
+  #     - "8100:5173"
+  #   volumes:
+  #     - ../memo-flash-front:/app
+  #     - /app/node_modules
+  #   environment:
+  #     - NODE_ENV=production
+
+  frontend-dev:
     build: ../memo-flash-front
-    container_name: frontend
+    container_name: frontend-dev
     ports:
       - "8000:5173"
     volumes:
       - ../memo-flash-front:/app
       - /app/node_modules
+    environment:
+      - VITE_API_BASE_URL=http://localhost:9000/
+      - NODE_ENV=development
+
+  frontend-prod:
+    build: ../memo-flash-front
+    container_name: frontend-prod
+    ports:
+      - "8100:5173"
+    volumes:
+      - ../memo-flash-front:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_BASE_URL=https://memo-flash-back.vercel.app/
+      - NODE_ENV=production
