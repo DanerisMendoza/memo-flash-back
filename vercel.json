@@ -1,8 +1,1 @@
-{
-    "rewrite": [
-        {
-            "sources": "./(.*)",
-            "destination": "/"
-        }
-    ]
-}
+{ "version": 2, "rewrites": [{ "source": "/(.*)", "destination": "/" }] }
